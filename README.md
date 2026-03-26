@@ -19,6 +19,14 @@
 
 ---
 
+## Screenshots
+
+| Meine Notiz | Dateien wiederherstellen | Backup-Steuerung |
+|:-----------:|:------------------------:|:----------------:|
+| ![Meine Notiz](TuxBackup_01.png) | ![Wiederherstellen](TuxBackup_02.png) | ![Backup-Steuerung](TuxBackup_03.png) |
+
+---
+
 ## Was kann TuxBackup?
 
 - **Vollständiges Home-Backup** als komprimiertes `.tar.gz`-Archiv
