@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+*.pyo
+tux_config.json
+mein_brief.txt
