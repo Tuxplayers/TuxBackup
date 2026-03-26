@@ -187,18 +187,8 @@ class TuxPlayerApp:
         self._build_ui()
         self._backup_refresh_status()
 
-        # Erstkonfiguration: kein Ziel gesetzt
-        if not self._cfg.get("backup_target"):
-            self.root.after(500, self._ask_first_run)
 
-    def _ask_first_run(self):
-        if messagebox.askyesno(
-            "Willkommen!",
-            "Noch kein Backup-Ziel konfiguriert.\n\n"
-            "Moechtest du jetzt einen Zielordner auswaehlen?\n"
-            "(Externe Festplatte oder beliebiger Ordner)"
-        ):
-            self._choose_backup_target()
+
 
     def _build_ui(self):
         hdr = tk.Frame(self.root, bg=CRUST, pady=10)
@@ -247,45 +237,105 @@ class TuxPlayerApp:
         except Exception as e:
             messagebox.showerror("Fehler", f"Ordner konnte nicht geoeffnet werden:\n{e}")
 
-    # ── Tab 1: Meine Notiz ────────────────────────────────────────────────────
+    # ── Tab 1: Meine Notiz ──────────────────────────────────────────────────
     def _build_brief_tab(self, parent):
-        tk.Label(parent, text="Meine Notiz",
+        tk.Label(parent, text="Willkommen bei TuxBackup",
                  font=("Arial", 13, "bold"), fg=PINK, bg=BG).pack(pady=(14, 4))
 
-        txt = tk.Text(parent, wrap=tk.WORD, font=("Arial", 11),
+        frame = tk.Frame(parent, bg=BG)
+        frame.pack(fill=tk.BOTH, expand=True, padx=18, pady=(0, 8))
+
+        sb = tk.Scrollbar(frame)
+        sb.pack(side=tk.RIGHT, fill=tk.Y)
+
+        txt = tk.Text(frame, wrap=tk.WORD, font=("Arial", 11),
                       fg=TEXT, bg=SURFACE, relief=tk.FLAT,
-                      padx=18, pady=14, state=tk.DISABLED)
-        sb = ttk.Scrollbar(parent, orient=tk.VERTICAL, command=txt.yview)
-        txt.configure(yscrollcommand=sb.set)
-        txt.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(12, 0), pady=(0, 8))
-        sb.pack(side=tk.RIGHT, fill=tk.Y, pady=(0, 8), padx=(0, 12))
+                      padx=18, pady=14, yscrollcommand=sb.set)
+        txt.pack(fill=tk.BOTH, expand=True)
+        sb.config(command=txt.yview)
 
         txt.tag_config("link", foreground=BLUE, underline=True)
+        txt.tag_bind("link", "<Enter>",    lambda e: txt.config(cursor="hand2"))
+        txt.tag_bind("link", "<Leave>",    lambda e: txt.config(cursor=""))
+        txt.tag_bind("link", "<Button-1>", lambda e: self._open_folder())
 
-        brief_text = DEFAULT_BRIEF
+        # Persoenliche Notiz aus Datei — falls vorhanden
         if os.path.exists(BRIEF_FILE):
             try:
                 with open(BRIEF_FILE, "r", encoding="utf-8") as f:
-                    brief_text = f.read()
+                    txt.insert(tk.END, f.read())
+                txt.config(state=tk.DISABLED)
+                tk.Button(
+                    parent,
+                    text="\u279c  Dateien jetzt wiederherstellen",
+                    command=lambda: self._nb.select(1),
+                    font=("Arial", 12, "bold"),
+                    fg=BG, bg=GREEN,
+                    relief=tk.FLAT, padx=20, pady=12, cursor="hand2",
+                ).pack(pady=(4, 14))
+                return
             except Exception:
                 pass
 
-        txt.config(state=tk.NORMAL)
-        txt.insert(tk.END, brief_text)
+        # Standard-Text (oeffentlich)
+        intro = """Willkommen bei TuxBackup!
+
+Dieses Programm sichert dein Home-Verzeichnis auf eine externe
+Festplatte oder einen beliebigen Ordner — und stellt Dateien wieder her.
+
+\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501
+  FALLS DAS PROGRAMM NOCHMAL GESTARTET WERDEN MUSS:
+\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501
+
+  Windows:   Doppelklick auf  START_MICH.bat
+  Mac:       Doppelklick auf  START_MICH.command
+  Linux:     Doppelklick auf  START_MICH.sh
+
+  Alle drei Dateien findet ihr hier \u2014 klickt einfach auf diesen Link:\n"""
+
+        txt.insert(tk.END, intro)
+        txt.insert(tk.END, "  \U0001f4c2  Ordner mit allen Dateien oeffnen", "link")
+        txt.insert(tk.END, """
+
+  Falls \"Python nicht gefunden\" erscheint:
+    1. Geht auf  www.python.org/downloads
+    2. Grossen Download-Button klicken
+    3. Installieren \u2013 dabei UNBEDINGT ankreuzen:
+       \"Add Python to PATH\"
+    4. Starter-Datei nochmal doppelklicken
+
+\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501
+  WAS MACHT TUXBACKUP?
+\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501
+
+  Backup erstellen    \u2013 sichert dein Home-Verzeichnis als
+  komprimiertes .tar.gz-Archiv mit SHA256-Pruefsumme.
+  Zu finden unter:  Backup-Zielordner/
+
+  Dateien wiederherstellen  \u2013 entpackt ein vorhandenes Backup
+  in einen Ordner deiner Wahl.
+
+  Dry-Run (Simulation)  \u2013 testet das Backup vollstaendig
+  ohne auch nur ein Byte zu schreiben.
+
+\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501
+
+Entwickelt von Heiko Schaefer (TUXPLAYER)
+https://tuxhs.de  \u00b7  github.com/Tuxplayers/TuxBackup
+
+Tipp: Lege eine Datei  mein_brief.txt  in den Programmordner,
+um hier deine persoenliche Notiz anzuzeigen.""")
+
         txt.config(state=tk.DISABLED)
 
-        btn_frame = tk.Frame(parent, bg=BG)
-        btn_frame.pack(pady=6)
-        tk.Button(btn_frame, text="📂  Backup-Ordner oeffnen",
-                  command=self._open_folder,
-                  font=("Arial", 11), fg=BG, bg=BLUE,
-                  relief=tk.FLAT, padx=16, pady=8, cursor="hand2"
-                  ).pack(side=tk.LEFT, padx=6)
-        tk.Button(btn_frame, text="→  Dateien wiederherstellen",
-                  command=lambda: self._nb.select(1),
-                  font=("Arial", 11), fg=BG, bg=GREEN,
-                  relief=tk.FLAT, padx=16, pady=8, cursor="hand2"
-                  ).pack(side=tk.LEFT, padx=6)
+        tk.Button(
+            parent,
+            text="\u279c  Dateien jetzt wiederherstellen",
+            command=lambda: self._nb.select(1),
+            font=("Arial", 12, "bold"),
+            fg=BG, bg=GREEN,
+            relief=tk.FLAT, padx=20, pady=12, cursor="hand2",
+        ).pack(pady=(4, 14))
 
     # ── Tab 2: Wiederherstellen ───────────────────────────────────────────────
     def _build_restore_tab(self, parent):
