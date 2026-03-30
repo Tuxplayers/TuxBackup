@@ -2,7 +2,7 @@
 
 > **Plattformübergreifendes Backup- und Wiederherstellungs-Tool mit grafischer Oberfläche.**
 > Läuft auf Linux, Windows und macOS — ohne Installation zusätzlicher Pakete.
-
+⚠️ Windows: Backup-Funktion benötigt WSL oder Git Bash. Wiederherstellung funktioniert mit 7-Zip.
 ---
 
 <div align="center">
